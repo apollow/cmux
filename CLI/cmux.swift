@@ -14112,7 +14112,7 @@ struct CMUXCLI {
                     )
                 }
 
-                if let completion {
+                if let completion, !claudeStopNotificationSuppressed() {
                     let title = "Claude Code"
                     let subtitle = sanitizeNotificationField(completion.subtitle)
                     let body = sanitizeNotificationField(completion.body)
@@ -14815,6 +14815,23 @@ struct CMUXCLI {
             return cwd
         }
         return nil
+    }
+
+    /// Returns `true` when the user has opted out of the stop-time desktop banner.
+    /// Set `CMUX_CLAUDE_STOP_NOTIFY=0` (or `false`/`no`) to suppress the
+    /// "Claude session completed in <project>" notification while keeping the
+    /// tab status icon update. Useful for users running many concurrent Claude
+    /// sessions who only want the icon, not the banner/sound.
+    private func claudeStopNotificationSuppressed() -> Bool {
+        guard let raw = ProcessInfo.processInfo.environment["CMUX_CLAUDE_STOP_NOTIFY"] else {
+            return false
+        }
+        switch raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
+        case "0", "false", "no", "off":
+            return true
+        default:
+            return false
+        }
     }
 
     private func summarizeClaudeHookStop(
